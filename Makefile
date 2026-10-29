@@ -6,7 +6,7 @@ APP := app/main.py
 OLLAMA_MODEL ?= qwen2.5:0.5b
 
 .DEFAULT_GOAL := help
-.PHONY: help install env model dev run test lint format check clean
+.PHONY: help install env model dev run test eval lint format check clean
 
 help: ## Show available commands
 	@Select-String -Path $(firstword $(MAKEFILE_LIST)) -Pattern '^([a-zA-Z_-]+):.*?## (.*)$$' | ForEach-Object { '{0,-10} {1}' -f $$_.Matches[0].Groups[1].Value, $$_.Matches[0].Groups[2].Value }
@@ -29,6 +29,9 @@ run: ## Run the API without reload
 
 test: ## Run the test suite
 	uv run pytest
+
+eval: ## Run the eval question set against OLLAMA_MODEL (needs Ollama)
+	uv run python -m evals.run --models $(OLLAMA_MODEL)
 
 lint: ## Lint and check formatting
 	uv run ruff check .
