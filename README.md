@@ -35,6 +35,8 @@ Results on my machine (GTX 1650, 4 GB), temperature 0:
 
 Every model gets the facts right when the facts exist. The difference is **knowing when to say no**: the 0.5b model invents an answer to most questions it should refuse. Full answers per model are in [`evals/results/`](evals/results).
 
+That's why the default model is `qwen2.5:1.5b`: it refuses far more reliably than 0.5b, still answers in about a third of a second, and fits a 4 GB GPU. `llama3.2:3b` scores a little higher at roughly twice the latency; set `OLLAMA_MODEL` to use it.
+
 ### Failure cases worth knowing
 
 - **Confident fabrication (0.5b).** "When did Vitor work at Google?" → *"Vitor Pinheiro worked at Google from 2018 to 2020."* Asked who runs Nubank, it answered that Vitor is the CEO.
@@ -66,11 +68,11 @@ Each run writes `evals/results/<model>.json` (every answer, verdict and latency)
 ```powershell
 make install   # Python 3.11 + dependencies
 make env       # create .env from .env.example (optional)
-make model     # ollama pull qwen2.5:0.5b
+make model     # ollama pull qwen2.5:1.5b
 make dev       # http://127.0.0.1:8000/docs
 ```
 
-Without make: `uv sync`, `ollama pull qwen2.5:0.5b`, `uv run fastapi dev app/main.py`.
+Without make: `uv sync`, `ollama pull qwen2.5:1.5b`, `uv run fastapi dev app/main.py`.
 
 ## Usage
 
@@ -105,7 +107,7 @@ Set via environment variables or `.env` (see `.env.example`):
 | Variable | Default |
 |----------|---------|
 | `OLLAMA_BASE_URL` | `http://localhost:11434` |
-| `OLLAMA_MODEL` | `qwen2.5:0.5b` |
+| `OLLAMA_MODEL` | `qwen2.5:1.5b` |
 | `OLLAMA_TIMEOUT_SECONDS` | `60` |
 
 ## Commands

@@ -3,7 +3,7 @@ SHELL := pwsh.exe
 .SHELLFLAGS := -NoProfile -NoLogo -Command
 
 APP := app/main.py
-OLLAMA_MODEL ?= qwen2.5:0.5b
+OLLAMA_MODEL ?= qwen2.5:1.5b
 
 .DEFAULT_GOAL := help
 .PHONY: help install env model dev run test eval lint format check clean
