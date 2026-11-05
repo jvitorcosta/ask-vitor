@@ -2,7 +2,60 @@
 
 A FastAPI service that answers questions with a local LLM (via [Ollama](https://ollama.com)), grounded in a small knowledge base. The sample knowledge base is about me: ask it about my experience, projects and stack. Swap in your own snippets in `app/knowledge/data.py`.
 
+**Status:** experiment
+
 The model answers only from that context, in 1–3 sentences, and returns a fixed fallback instead of guessing when the answer isn't there.
+
+## Why I built it
+
+I wanted to see how far a small local model can go at answering only from a given context, and to measure it instead of assuming it. So the repo includes an eval set that scores grounding, refusals and latency (see [Evaluation](#evaluation)).
+
+## Quick start
+
+### Prerequisites
+
+| Tool | Install (Windows) |
+|------|-------------------|
+| [uv](https://docs.astral.sh/uv/) — manages Python 3.11 + deps | `winget install astral-sh.uv` |
+| [Ollama](https://ollama.com/download) — runs the local LLM | `winget install Ollama.Ollama` |
+| GNU make (optional) | `winget install ezwinports.make` (or use `mingw32-make`) |
+
+### Install and run
+
+```powershell
+make install   # Python 3.11 + dependencies
+make env       # create .env from .env.example (optional)
+make model     # ollama pull qwen2.5:1.5b
+make dev       # http://127.0.0.1:8000/docs
+```
+
+Without make: `uv sync`, `ollama pull qwen2.5:1.5b`, `uv run fastapi dev app/main.py`.
+
+### Call it
+
+```powershell
+Invoke-RestMethod -Method Post http://127.0.0.1:8000/ask `
+  -ContentType "application/json" `
+  -Body '{"question": "Where has Vitor worked?"}'
+```
+
+```bash
+curl -X POST http://127.0.0.1:8000/ask \
+  -H "Content-Type: application/json" \
+  -d '{"question": "Where has Vitor worked?"}'
+```
+
+Response:
+
+```json
+{"question": "Where has Vitor worked?", "answer": "..."}
+```
+
+| Status | When |
+|--------|------|
+| `200` | Answer generated. Questions outside the knowledge base get `"I don't have information about that."` |
+| `422` | `question` missing, blank, or longer than 500 characters |
+| `503` | Ollama is unreachable or failed |
 
 ## How it works
 
@@ -46,7 +99,7 @@ That's why the default model is `qwen2.5:1.5b`: it refuses far more reliably tha
 
 What I'd try next: a model-side check that the answer's claims appear in the context (not just its numbers), few-shot refusal examples in the prompt, and an input filter for instruction-like questions.
 
-### Run it
+### Run the eval
 
 ```powershell
 make eval                                   # the configured OLLAMA_MODEL
@@ -54,51 +107,6 @@ uv run python -m evals.run --models qwen2.5:0.5b qwen2.5:1.5b llama3.2:3b
 ```
 
 Each run writes `evals/results/<model>.json` (every answer, verdict and latency) and `evals/results/summary.md` (the table above).
-
-## Prerequisites
-
-| Tool | Install (Windows) |
-|------|-------------------|
-| [uv](https://docs.astral.sh/uv/) — manages Python 3.11 + deps | `winget install astral-sh.uv` |
-| [Ollama](https://ollama.com/download) — runs the local LLM | `winget install Ollama.Ollama` |
-| GNU make (optional) | `winget install ezwinports.make` (or use `mingw32-make`) |
-
-## Quickstart
-
-```powershell
-make install   # Python 3.11 + dependencies
-make env       # create .env from .env.example (optional)
-make model     # ollama pull qwen2.5:1.5b
-make dev       # http://127.0.0.1:8000/docs
-```
-
-Without make: `uv sync`, `ollama pull qwen2.5:1.5b`, `uv run fastapi dev app/main.py`.
-
-## Usage
-
-```powershell
-Invoke-RestMethod -Method Post http://127.0.0.1:8000/ask `
-  -ContentType "application/json" `
-  -Body '{"question": "Where has Vitor worked?"}'
-```
-
-```bash
-curl -X POST http://127.0.0.1:8000/ask \
-  -H "Content-Type: application/json" \
-  -d '{"question": "Where has Vitor worked?"}'
-```
-
-Response:
-
-```json
-{"question": "Where has Vitor worked?", "answer": "..."}
-```
-
-| Status | When |
-|--------|------|
-| `200` | Answer generated. Questions outside the knowledge base get `"I don't have information about that."` |
-| `422` | `question` missing, blank, or longer than 500 characters |
-| `503` | Ollama is unreachable or failed |
 
 ## Configuration
 
@@ -145,3 +153,7 @@ evals/
   results/            # answers, verdicts and latency per model
 tests/
 ```
+
+## License
+
+[MIT](LICENSE).
