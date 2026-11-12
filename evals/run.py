@@ -23,7 +23,7 @@ from app.llm.anthropic import AnthropicClient
 from app.llm.base import LLMClient
 from app.llm.ollama import OllamaClient
 from app.services.qa import QAService
-from evals.scoring import Case, Scored, markdown_table, score, summarize
+from evals.scoring import Case, Scored, Summary, markdown_table, score, summarize
 
 EVALS_DIR = Path(__file__).resolve().parent
 QUESTIONS = EVALS_DIR / "questions.json"
@@ -93,6 +93,17 @@ def write_results(model: str, results: list[Scored]) -> None:
     path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
+def write_summary(results_dir: Path = RESULTS_DIR) -> str:
+    """Rebuild summary.md from every model's results file, not only this run's models."""
+    summaries = [
+        Summary(**json.loads(path.read_text(encoding="utf-8"))["summary"])
+        for path in sorted(results_dir.glob("*.json"))
+    ]
+    table = markdown_table(summaries)
+    (results_dir / "summary.md").write_text(table + "\n", encoding="utf-8")
+    return table
+
+
 async def main(backend: str, models: list[str], knowledge_path: str | None) -> None:
     settings = get_settings()
     api_key = settings.anthropic_api_key
@@ -100,7 +111,6 @@ async def main(backend: str, models: list[str], knowledge_path: str | None) -> N
         sys.exit("ANTHROPIC_API_KEY is not set: add it to .env or the environment.")
 
     cases = load_cases()
-    summaries = []
     async with httpx.AsyncClient(
         base_url=settings.ollama_base_url, timeout=settings.ollama_timeout_seconds
     ) as http:
@@ -120,12 +130,9 @@ async def main(backend: str, models: list[str], knowledge_path: str | None) -> N
                 llm = OllamaClient(http, model)
             results = await run_model(model, cases, llm, knowledge, warm_up=backend == "ollama")
             write_results(model, results)
-            summaries.append(summarize(model, results))
 
-    table = markdown_table(summaries)
-    (RESULTS_DIR / "summary.md").write_text(table + "\n", encoding="utf-8")
     print()
-    print(table)
+    print(write_summary())
 
 
 if __name__ == "__main__":
