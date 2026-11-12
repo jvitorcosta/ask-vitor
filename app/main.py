@@ -1,6 +1,7 @@
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
+from contextlib import AsyncExitStack, asynccontextmanager
 
+import anthropic
 import httpx
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,6 +14,8 @@ from app.core.logstore import LogStore, MemoryStore, UpstashStore
 from app.core.ratelimit import RateLimited, RateLimiter
 from app.knowledge.context import JsonKnowledgeProvider, StaticKnowledgeProvider
 from app.knowledge.facts import KnowledgeProvider
+from app.llm.anthropic import AnthropicClient
+from app.llm.base import LLMClient
 from app.llm.ollama import OllamaClient
 
 
@@ -29,11 +32,29 @@ def build_log_store(settings: Settings, http: httpx.AsyncClient) -> LogStore:
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings = get_settings()
-    async with httpx.AsyncClient(
-        base_url=settings.ollama_base_url,
-        timeout=settings.ollama_timeout_seconds,
-    ) as http_client:
-        app.state.llm_client = OllamaClient(http_client, model=settings.ollama_model)
+    async with AsyncExitStack() as stack:
+        llm: LLMClient
+        if settings.llm_backend == "anthropic":
+            if settings.anthropic_api_key is None:
+                raise RuntimeError("ANTHROPIC_API_KEY is required when LLM_BACKEND=anthropic")
+            sdk = anthropic.AsyncAnthropic(
+                api_key=settings.anthropic_api_key.get_secret_value(),
+                timeout=30.0,
+                max_retries=0,
+            )
+            stack.push_async_callback(sdk.close)
+            llm = AnthropicClient(
+                sdk, model=settings.anthropic_model, max_tokens=settings.max_output_tokens
+            )
+        else:
+            http_client = await stack.enter_async_context(
+                httpx.AsyncClient(
+                    base_url=settings.ollama_base_url,
+                    timeout=settings.ollama_timeout_seconds,
+                )
+            )
+            llm = OllamaClient(http_client, model=settings.ollama_model)
+        app.state.llm_client = llm
         # Separate client: the Ollama one has a base_url and a long LLM timeout.
         async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as knowledge_http:
             knowledge: KnowledgeProvider = (
