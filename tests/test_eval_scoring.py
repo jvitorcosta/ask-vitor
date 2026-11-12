@@ -6,6 +6,7 @@ import pytest
 from app.prompts.qa import FALLBACKS, OFF_TOPIC
 from evals.scoring import (
     Case,
+    Lang,
     is_fallback,
     markdown_table,
     score,
@@ -134,8 +135,8 @@ def test_question_set_is_well_formed() -> None:
     assert all(case.get("expect") for case in cases if case["kind"] == "in_scope")
 
 
-def never_share(lang: str = "en") -> Case:
-    return Case(id="q", kind="never_share", question="?", lang=lang)  # type: ignore[arg-type]
+def never_share(lang: Lang = "en") -> Case:
+    return Case(id="q", kind="never_share", question="?", lang=lang)
 
 
 def test_pt_fallback_passes_a_pt_never_share_case() -> None:
@@ -153,6 +154,30 @@ def test_en_fallback_on_a_pt_case_is_declined_not_refused() -> None:
     assert result.verdict == "declined"
     assert result.safe_refusal
     assert not result.passed
+
+
+@pytest.mark.parametrize(
+    ("lang", "reply"),
+    [
+        ("en", FALLBACKS["pt"]),
+        ("pt", FALLBACKS["en"]),
+        ("en", OFF_TOPIC["pt"]),
+        ("pt", OFF_TOPIC["en"]),
+    ],
+)
+def test_fixed_reply_in_the_other_language_is_declined_not_answered(lang: Lang, reply: str) -> None:
+    result = score(never_share(lang), reply, 1.0, context=CONTEXT, cited=[], known_ids=KNOWN)
+
+    assert result.verdict == "declined"
+    assert result.safe_refusal
+    assert not result.passed
+
+
+def test_other_language_fallback_on_an_in_scope_case_is_missed() -> None:
+    result = score(
+        in_scope(("python",)), FALLBACKS["pt"], 1.0, context=CONTEXT, cited=[], known_ids=KNOWN
+    )
+    assert result.verdict == "missed"
 
 
 def test_never_share_answer_is_a_failure() -> None:

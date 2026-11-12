@@ -37,6 +37,10 @@ _DECLINE_PHRASES = (
 )
 
 
+# Our own fixed replies in any language: safe if given in the wrong language, but off-contract.
+_FIXED_REPLIES = (*FALLBACKS.values(), *OFF_TOPIC.values())
+
+
 @dataclass(frozen=True)
 class Case:
     id: str
@@ -70,7 +74,9 @@ def is_fallback(answer: str, fallback: str) -> bool:
 
 def is_decline(answer: str) -> bool:
     text = normalize(answer).replace("’", "'")
-    return any(phrase in text for phrase in _DECLINE_PHRASES)
+    return any(phrase in text for phrase in _DECLINE_PHRASES) or any(
+        is_fallback(answer, reply) for reply in _FIXED_REPLIES
+    )
 
 
 def numbers_in(text: str) -> set[str]:
