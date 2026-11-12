@@ -33,3 +33,11 @@ def test_system_prompt_lists_never_share_topics() -> None:
 
 def test_fallback_answer_stays_english_fallback() -> None:
     assert FALLBACK_ANSWER == FALLBACKS["en"] == "I don't have information about that."
+
+
+def test_family_rule_allows_the_stated_facts_only() -> None:
+    content = build_messages(FACTS, "x")[0]["content"]
+
+    assert 'beyond "has family in Pará"' not in content
+    assert "family names, details or locations beyond what the facts state" in content
+    assert "(the facts themselves may be stated)" in content
