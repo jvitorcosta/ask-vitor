@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     ollama_base_url: str = "http://localhost:11434"
     ollama_model: str = "qwen2.5:1.5b"
     ollama_timeout_seconds: float = 60.0
+    # Browser origins allowed to call the API (the Next.js app in web/ runs on port 3000).
+    cors_origins: list[str] = ["http://localhost:3000"]
 
 
 @lru_cache

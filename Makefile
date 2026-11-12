@@ -6,7 +6,7 @@ APP := app/main.py
 OLLAMA_MODEL ?= qwen2.5:1.5b
 
 .DEFAULT_GOAL := help
-.PHONY: help install env model dev run test eval lint format check clean
+.PHONY: help install env model dev run test eval lint format check clean web-install web web-check
 
 help: ## Show available commands
 	@Select-String -Path $(firstword $(MAKEFILE_LIST)) -Pattern '^([a-zA-Z_-]+):.*?## (.*)$$' | ForEach-Object { '{0,-10} {1}' -f $$_.Matches[0].Groups[1].Value, $$_.Matches[0].Groups[2].Value }
@@ -42,6 +42,16 @@ format: ## Auto-fix lint issues and format code
 	uv run ruff format .
 
 check: lint test ## Lint + tests (run before committing)
+
+web-install: ## Install the web app's dependencies (needs Node 20.9+)
+	npm --prefix web install
+
+web: ## Run the web app with hot reload (http://localhost:3000; start the API with make dev)
+	npm --prefix web run dev
+
+web-check: ## Typecheck and build the web app
+	npm --prefix web run typecheck
+	npm --prefix web run build
 
 clean: ## Remove caches
 	@Get-ChildItem -Recurse -Directory -Include __pycache__, .pytest_cache, .ruff_cache | Remove-Item -Recurse -Force
