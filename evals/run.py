@@ -13,7 +13,7 @@ from pathlib import Path
 import httpx
 
 from app.core.config import get_settings
-from app.knowledge.context import StaticContextProvider
+from app.knowledge.context import StaticKnowledgeProvider
 from app.knowledge.data import KNOWLEDGE_BASE
 from app.llm.ollama import OllamaClient
 from app.prompts.qa import FALLBACK_ANSWER
@@ -43,7 +43,7 @@ async def run_model(model: str, cases: list[Case]) -> list[Scored]:
     async with httpx.AsyncClient(
         base_url=settings.ollama_base_url, timeout=settings.ollama_timeout_seconds
     ) as http:
-        service = QAService(OllamaClient(http, model), StaticContextProvider())
+        service = QAService(OllamaClient(http, model), StaticKnowledgeProvider())
         await service.answer("Warm-up: load the model before timing.")
 
         results = []

@@ -94,7 +94,7 @@ How the streaming works end to end, and why each choice was made: [docs/streamin
 
 ## How it works
 
-`POST /ask` → `QAService` gets the knowledge base from a `ContextProvider`, builds a grounded prompt (answer only from context, 1–3 sentences, fixed fallback when unknown) and sends it to the LLM through the `LLMClient` interface (Ollama implementation). The answer is returned as JSON.
+`POST /ask` → `QAService` gets cited facts from a `KnowledgeProvider`, builds a grounded prompt (answer only from context, 1–3 sentences, fixed fallback when unknown) and sends it to the LLM through the `LLMClient` interface (Ollama implementation). The answer is returned as JSON.
 
 `POST /ask/stream` builds the same prompt, asks Ollama to stream (one JSON line per token), and forwards each token to the client as a Server-Sent Event. It waits for the first token before responding, so a dead model still returns a real `503`.
 
