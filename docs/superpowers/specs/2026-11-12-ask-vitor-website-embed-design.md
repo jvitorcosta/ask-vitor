@@ -132,7 +132,8 @@ jvitorcosta.github.io (static, GitHub Pages)
   local backend; a setting picks the backend.
 - **Prompt:** the existing grounded prompt, extended: answer only from the knowledge file, 1–3
   sentences, cite source ids, fixed fallback, never-share list, off-topic reply, answer in the
-  question's language. Temperature 0. Knowledge file in a cached system block (prompt caching) to
+  question's language. No temperature setting (Haiku 5.5 rejects non-default values, so the
+  prompt and evals carry the consistency instead). Knowledge file in a cached system block (prompt caching) to
   cut cost and latency.
 - **Hosting:** Vercel (like his Spotify server). CORS allows only the site's origin (and localhost
   for dev).
