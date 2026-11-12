@@ -1,12 +1,16 @@
 import json
+import sys
+import time
 from collections.abc import AsyncIterator
+from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 
-from app.api.dependencies import get_qa_service
+from app.api.dependencies import get_log_store, get_qa_service
 from app.core.exceptions import LLMError
+from app.core.logstore import LogRecord, LogStore, redact
 from app.schemas.qa import AskRequest, AskResponse, SourceOut
 from app.services.qa import Answer, QAService
 
@@ -23,8 +27,11 @@ LLM_UNAVAILABLE = {"detail": "LLM service unavailable"}
 async def ask(
     request: AskRequest,
     service: Annotated[QAService, Depends(get_qa_service)],
+    log_store: Annotated[LogStore, Depends(get_log_store)],
 ) -> AskResponse:
+    started = time.perf_counter()
     answer = await service.answer(request.question)
+    await _log(log_store, request.question, answer, started)
     return AskResponse(
         question=request.question,
         answer=answer.text,
@@ -37,6 +44,22 @@ def _sources_out(answer: Answer) -> list[SourceOut]:
     return [
         SourceOut(id=fact.id, label=fact.source, updated=fact.updated) for fact in answer.sources
     ]
+
+
+async def _log(store: LogStore, question: str, answer: Answer, started: float) -> None:
+    """Save an anonymous, redacted record. A failing store must never break the answer."""
+    record = LogRecord(
+        question=redact(question),
+        answer=redact(answer.text),
+        kind=answer.kind,
+        sources=[fact.id for fact in answer.sources],
+        latency_ms=round((time.perf_counter() - started) * 1000),
+        date=datetime.now(UTC).date().isoformat(),
+    )
+    try:
+        await store.save(record)
+    except Exception as error:  # best-effort: a failing log must not break the answer
+        print(f"question log failed: {error!r}", file=sys.stderr)
 
 
 def sse(data: dict, event: str | None = None) -> str:
@@ -60,7 +83,9 @@ def sse(data: dict, event: str | None = None) -> str:
 async def ask_stream(
     request: AskRequest,
     service: Annotated[QAService, Depends(get_qa_service)],
+    log_store: Annotated[LogStore, Depends(get_log_store)],
 ) -> StreamingResponse:
+    started = time.perf_counter()
     items = service.answer_stream(request.question)
 
     # Wait for the first item before answering. Once a stream starts, the 200 status is
@@ -80,8 +105,12 @@ async def ask_stream(
     async def events() -> AsyncIterator[str]:
         try:
             yield frame(first)
+            if isinstance(first, Answer):
+                await _log(log_store, request.question, first, started)
             async for item in items:
                 yield frame(item)
+                if isinstance(item, Answer):
+                    await _log(log_store, request.question, item, started)
         except LLMError:
             yield sse(LLM_UNAVAILABLE, event="error")
 

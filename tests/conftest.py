@@ -3,8 +3,9 @@ from collections.abc import AsyncIterator, Iterator
 import pytest
 from fastapi.testclient import TestClient
 
-from app.api.dependencies import get_llm_client
+from app.api.dependencies import get_llm_client, get_log_store
 from app.core.exceptions import LLMError
+from app.core.logstore import MemoryStore
 from app.llm.base import Message
 from app.main import create_app
 
@@ -39,8 +40,14 @@ def fake_llm() -> FakeLLMClient:
 
 
 @pytest.fixture
-def client(fake_llm: FakeLLMClient) -> Iterator[TestClient]:
+def store() -> MemoryStore:
+    return MemoryStore()
+
+
+@pytest.fixture
+def client(fake_llm: FakeLLMClient, store: MemoryStore) -> Iterator[TestClient]:
     app = create_app()
     app.dependency_overrides[get_llm_client] = lambda: fake_llm
+    app.dependency_overrides[get_log_store] = lambda: store
     with TestClient(app) as test_client:
         yield test_client

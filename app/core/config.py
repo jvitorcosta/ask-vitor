@@ -1,5 +1,6 @@
 from functools import lru_cache
 
+from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -13,6 +14,9 @@ class Settings(BaseSettings):
     knowledge_source: str = ""
     # Browser origins allowed to call the API (the Next.js app in web/ runs on port 3000).
     cors_origins: list[str] = ["http://localhost:3000"]
+    # Both set: the question log goes to Upstash Redis. Otherwise it stays in memory.
+    upstash_redis_rest_url: str = ""
+    upstash_redis_rest_token: SecretStr | None = None
 
 
 @lru_cache

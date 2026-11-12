@@ -2,6 +2,7 @@ from typing import Annotated
 
 from fastapi import Depends, Request
 
+from app.core.logstore import LogStore
 from app.knowledge.facts import KnowledgeProvider
 from app.llm.base import LLMClient
 from app.services.qa import QAService
@@ -13,6 +14,10 @@ def get_llm_client(request: Request) -> LLMClient:
 
 def get_knowledge_provider(request: Request) -> KnowledgeProvider:
     return request.app.state.knowledge_provider
+
+
+def get_log_store(request: Request) -> LogStore:
+    return request.app.state.log_store
 
 
 def get_qa_service(

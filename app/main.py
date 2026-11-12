@@ -7,11 +7,22 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.api.routes import health, qa
-from app.core.config import get_settings
+from app.core.config import Settings, get_settings
 from app.core.exceptions import LLMError
+from app.core.logstore import LogStore, MemoryStore, UpstashStore
 from app.knowledge.context import JsonKnowledgeProvider, StaticKnowledgeProvider
 from app.knowledge.facts import KnowledgeProvider
 from app.llm.ollama import OllamaClient
+
+
+def build_log_store(settings: Settings, http: httpx.AsyncClient) -> LogStore:
+    if settings.upstash_redis_rest_url and settings.upstash_redis_rest_token:
+        return UpstashStore(
+            settings.upstash_redis_rest_url,
+            settings.upstash_redis_rest_token.get_secret_value(),
+            http=http,
+        )
+    return MemoryStore()
 
 
 @asynccontextmanager
@@ -30,7 +41,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
                 else StaticKnowledgeProvider()
             )
             app.state.knowledge_provider = knowledge
-            yield
+            async with httpx.AsyncClient(timeout=5.0) as log_http:
+                app.state.log_store = build_log_store(settings, log_http)
+                yield
 
 
 async def llm_error_handler(request: Request, exc: LLMError) -> JSONResponse:
