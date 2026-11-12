@@ -143,19 +143,26 @@ Replace `<project>` with the Vercel project name.
 
 ```bash
 # Answer: token frames, then `event: done` with "kind": "answer"
-curl -N -X POST https://<project>.vercel.app/ask/stream   -H "Content-Type: application/json"   -d '{"question":"Where has Vitor worked?"}'
+curl -N -X POST https://<project>.vercel.app/ask/stream \
+  -H "Content-Type: application/json" \
+  -d '{"question":"Where has Vitor worked?"}'
 
 # Fallback: "Não tenho informação sobre isso." and "kind": "fallback"
-curl -N -X POST https://<project>.vercel.app/ask/stream   -H "Content-Type: application/json"   -d '{"question":"Qual o salário dele?"}'
+curl -N -X POST https://<project>.vercel.app/ask/stream \
+  -H "Content-Type: application/json" \
+  -d '{"question":"Qual o salário dele?"}'
 
 # Rate limit: the 11th quick request returns 429
 for i in $(seq 1 11); do
-  curl -s -o /dev/null -w "%{http_code}
-" -X POST https://<project>.vercel.app/ask/stream     -H "Content-Type: application/json"     -d '{"question":"Where has Vitor worked?"}'
+  curl -s -o /dev/null -w "%{http_code}\n" -X POST https://<project>.vercel.app/ask/stream \
+    -H "Content-Type: application/json" \
+    -d '{"question":"Where has Vitor worked?"}'
 done
 
 # CORS preflight from the site origin: expect access-control-allow-origin: https://jvitorcosta.github.io
-curl -i -X OPTIONS https://<project>.vercel.app/ask/stream   -H "Origin: https://jvitorcosta.github.io"   -H "Access-Control-Request-Method: POST"
+curl -i -X OPTIONS https://<project>.vercel.app/ask/stream \
+  -H "Origin: https://jvitorcosta.github.io" \
+  -H "Access-Control-Request-Method: POST"
 ```
 
 ## Evaluation
