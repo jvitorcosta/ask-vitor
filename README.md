@@ -16,14 +16,14 @@ I wanted to see how far a small local model can go at answering only from a give
 
 | Tool | Install (Windows) |
 |------|-------------------|
-| [uv](https://docs.astral.sh/uv/) — manages Python 3.11 + deps | `winget install astral-sh.uv` |
+| [uv](https://docs.astral.sh/uv/) — manages Python 3.12 + deps | `winget install astral-sh.uv` |
 | [Ollama](https://ollama.com/download) — runs the local LLM | `winget install Ollama.Ollama` |
 | GNU make (optional) | `winget install ezwinports.make` (or use `mingw32-make`) |
 
 ### Install and run
 
 ```powershell
-make install   # Python 3.11 + dependencies
+make install   # Python 3.12 + dependencies
 make env       # create .env from .env.example (optional)
 make model     # ollama pull qwen2.5:1.5b
 make dev       # http://127.0.0.1:8000/docs
@@ -129,7 +129,7 @@ Environment variables (set in the Vercel project; see `.env.example` for the ful
 3. Vercel Marketplace: add Upstash Redis to the project (it adds the REST URL and token variables).
 4. Add the remaining variables from the table above, then redeploy.
 
-Vercel runs Python 3.12 or newer, so `requires-python` allows 3.12 as well as 3.11.
+Vercel runs Python 3.12 (its default), so the project targets 3.12 locally too.
 
 ### Smoke test
 
@@ -214,7 +214,7 @@ Recipes in the `Makefile` run in PowerShell 7 (`pwsh`). Run `make help` to list 
 
 | Command | Does |
 |---------|------|
-| `make install` | Install Python 3.11 + dependencies |
+| `make install` | Install Python 3.12 + dependencies |
 | `make env` | Create `.env` from `.env.example` |
 | `make model` | `ollama pull` the configured model (`make model OLLAMA_MODEL=...` to override) |
 | `make dev` / `make run` | Run the API with / without auto-reload |

@@ -11,8 +11,8 @@ OLLAMA_MODEL ?= qwen2.5:1.5b
 help: ## Show available commands
 	@Select-String -Path $(firstword $(MAKEFILE_LIST)) -Pattern '^([a-zA-Z_-]+):.*?## (.*)$$' | ForEach-Object { '{0,-10} {1}' -f $$_.Matches[0].Groups[1].Value, $$_.Matches[0].Groups[2].Value }
 
-install: ## Install Python 3.11 and all dependencies (incl. dev)
-	uv python install 3.11
+install: ## Install Python 3.12 and all dependencies (incl. dev)
+	uv python install 3.12
 	uv sync
 
 env: ## Create .env from .env.example (if missing)
