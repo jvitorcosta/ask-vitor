@@ -98,6 +98,58 @@ How the streaming works end to end, and why each choice was made: [docs/streamin
 
 `POST /ask/stream` builds the same prompt, asks Ollama to stream (one JSON line per token), and forwards each token to the client as a Server-Sent Event. It waits for the first token before responding, so a dead model still returns a real `503`.
 
+## Hosted mode
+
+The same API can run in production behind the portfolio site, answering with Claude Haiku 5.5 instead of Ollama.
+
+| Piece | Runs on |
+|-------|---------|
+| Site (static page, owns `knowledge.json`) | GitHub Pages, `https://jvitorcosta.github.io` |
+| This API (`app.main:app`, streams `POST /ask/stream`) | Vercel Functions (Python runtime, FastAPI detected from `pyproject.toml` and `app/main.py`; no `vercel.json` or `requirements.txt` needed) |
+| LLM | Claude API, in a dedicated workspace with a spend limit |
+| Question log and rate-limit counters | Upstash Redis |
+
+Environment variables (set in the Vercel project; see `.env.example` for the full list):
+
+| Variable | Value |
+|----------|-------|
+| `LLM_BACKEND` | `anthropic` |
+| `ANTHROPIC_API_KEY` | key from the `ask-vitor-site` workspace (secret) |
+| `ANTHROPIC_MODEL` | `claude-haiku-5-5` (default) |
+| `KNOWLEDGE_SOURCE` | `https://jvitorcosta.github.io/knowledge.json` |
+| `CORS_ORIGINS` | `["https://jvitorcosta.github.io"]` |
+| `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | added by the Upstash integration |
+| `RATE_LIMIT_PER_HOUR` | questions per visitor per hour (default `10`) |
+| `DAILY_QUESTION_CAP` | questions across all visitors per UTC day (default `300`) |
+
+### Owner setup (manual)
+
+1. Claude Console: create a workspace `ask-vitor-site`, set its monthly spend limit to **$5**, and create an API key in it.
+2. Vercel: import this GitHub repository as a project.
+3. Vercel Marketplace: add Upstash Redis to the project (it adds the REST URL and token variables).
+4. Add the remaining variables from the table above, then redeploy.
+
+Vercel runs Python 3.12 or newer, so `requires-python` allows 3.12 as well as 3.11.
+
+### Smoke test
+
+Replace `<project>` with the Vercel project name.
+
+```bash
+# Answer: token frames, then `event: done` with "kind": "answer"
+curl -N -X POST https://<project>.vercel.app/ask/stream   -H "Content-Type: application/json" -d '{"question":"Where has Vitor worked?"}'
+
+# Fallback: "Não tenho informação sobre isso." and "kind": "fallback"
+curl -N -X POST https://<project>.vercel.app/ask/stream   -H "Content-Type: application/json" -d '{"question":"Qual o salário dele?"}'
+
+# Rate limit: the 11th quick request returns 429
+for i in $(seq 1 11); do curl -s -o /dev/null -w "%{http_code}
+" -X POST https://<project>.vercel.app/ask/stream   -H "Content-Type: application/json" -d '{"question":"Where has Vitor worked?"}'; done
+
+# CORS preflight from the site origin: expect access-control-allow-origin: https://jvitorcosta.github.io
+curl -i -X OPTIONS https://<project>.vercel.app/ask/stream   -H "Origin: https://jvitorcosta.github.io" -H "Access-Control-Request-Method: POST"
+```
+
 ## Evaluation
 
 "Grounded" is a claim, so it's tested. [`evals/questions.json`](evals/questions.json) holds 28 fixed questions:
