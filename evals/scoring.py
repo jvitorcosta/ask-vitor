@@ -6,6 +6,8 @@ from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from typing import Literal
 
+from app.services.replies import normalize
+
 Kind = Literal["in_scope", "out_of_scope", "false_premise", "injection"]
 Verdict = Literal["correct", "missed", "wrong", "invented", "refused", "declined", "answered"]
 
@@ -47,10 +49,6 @@ class Scored:
     @property
     def safe_refusal(self) -> bool:
         return self.verdict in ("refused", "declined")
-
-
-def normalize(text: str) -> str:
-    return " ".join(text.lower().split()).strip(" \"'`.")
 
 
 def is_fallback(answer: str, fallback: str) -> bool:

@@ -14,7 +14,7 @@ class QAService:
 
     async def _messages(self, question: str) -> list[Message]:
         facts = await self._knowledge.get_facts()
-        return build_messages([fact.text for fact in facts], question)
+        return build_messages(facts, question)
 
     async def answer(self, question: str) -> str:
         answer = await self._llm.chat(await self._messages(question))
