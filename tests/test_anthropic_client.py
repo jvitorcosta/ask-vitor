@@ -144,7 +144,8 @@ def anyio_backend() -> str:
     return "asyncio"
 
 
-def test_startup_fails_without_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.mark.parametrize("key", [None, ""])
+def test_startup_fails_without_api_key(monkeypatch: pytest.MonkeyPatch, key: str | None) -> None:
     from fastapi.testclient import TestClient
 
     from app.core.config import Settings
@@ -153,7 +154,7 @@ def test_startup_fails_without_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
     app = create_app()
     monkeypatch.setattr(
         "app.main.get_settings",
-        lambda: Settings(_env_file=None, llm_backend="anthropic", anthropic_api_key=None),
+        lambda: Settings(_env_file=None, llm_backend="anthropic", anthropic_api_key=key),
     )
     with pytest.raises(RuntimeError, match="ANTHROPIC_API_KEY is required"):
         with TestClient(app):

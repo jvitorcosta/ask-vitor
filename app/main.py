@@ -35,7 +35,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     async with AsyncExitStack() as stack:
         llm: LLMClient
         if settings.llm_backend == "anthropic":
-            if settings.anthropic_api_key is None:
+            if (
+                settings.anthropic_api_key is None
+                or not settings.anthropic_api_key.get_secret_value()
+            ):
                 raise RuntimeError("ANTHROPIC_API_KEY is required when LLM_BACKEND=anthropic")
             sdk = anthropic.AsyncAnthropic(
                 api_key=settings.anthropic_api_key.get_secret_value(),
