@@ -77,11 +77,16 @@ def sse(data: dict, event: str | None = None) -> str:
     response_class=StreamingResponse,
     dependencies=[Depends(enforce_limits)],
     responses={
-        429: {"description": "Rate limited"},
+        429: {
+            "description": "Rate limited (hourly per visitor, or the daily cap): "
+            '`{"detail": "rate_limited"}`'
+        },
         200: {
             "content": {"text/event-stream": {}},
             "description": 'Events: `data: {"token": "..."}` per piece of the answer, then '
-            "`event: done`. If the LLM fails mid-answer: `event: error`.",
+            '`event: done` with `data: {"kind": "answer" | "fallback" | "off_topic", '
+            '"sources": [{"id", "label", "updated"}]}`. If the LLM fails mid-answer: '
+            "`event: error` instead.",
         },
         503: {"description": "LLM service unavailable"},
     },

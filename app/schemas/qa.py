@@ -29,6 +29,10 @@ class AskResponse(BaseModel):
                     "question": "Where has Vitor worked?",
                     "answer": "Vitor has worked at Nubank, at Qubika on fraud detection for "
                     "Coastal Community Bank, and at EloGroup on forecasting for Comgás.",
+                    "kind": "answer",
+                    "sources": [
+                        {"id": "cv.nubank", "label": "CV · Experience", "updated": "2026-11-12"}
+                    ],
                 }
             ]
         }
