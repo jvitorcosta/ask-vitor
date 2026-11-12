@@ -100,7 +100,7 @@ How the streaming works end to end, and why each choice was made: [docs/streamin
 
 `POST /ask` → `QAService` gets cited facts (id, source label, updated date, text) from a `KnowledgeProvider`, builds a grounded prompt (answer only from the facts, 1–3 sentences, fixed fallback or off-topic reply, a never-share list) and sends it to the LLM through the `LLMClient` interface (Ollama or Claude). The model ends a real answer with a `<<sources: id1, id2>>` line; the service strips it, maps the ids to facts, and classifies the reply as `answer`, `fallback` or `off_topic` (`kind`). The answer is returned as JSON with `kind` and `sources`.
 
-`POST /ask/stream` builds the same prompt, asks Ollama to stream (one JSON line per token), and forwards each token to the client as a Server-Sent Event. It hides the sources trailer even when it arrives split across tokens, and finishes with `event: done` carrying `kind` and `sources`. It waits for the first token before responding, so a dead model still returns a real `503`.
+`POST /ask/stream` builds the same prompt, asks the configured LLM client to stream (Ollama locally, Claude in hosted mode), and forwards each token to the client as a Server-Sent Event. It hides the sources trailer even when it arrives split across tokens, and finishes with `event: done` carrying `kind` and `sources`. It waits for the first token before responding, so a dead model still returns a real `503`.
 
 Why the hosted version is built this way (grounding, citations, privacy, cost caps, evals): [docs/hosted-assistant.md](docs/hosted-assistant.md).
 
@@ -167,14 +167,14 @@ curl -i -X OPTIONS https://<project>.vercel.app/ask/stream \
 
 ## Evaluation
 
-"Grounded" is a claim, so it's tested. [`evals/questions.json`](evals/questions.json) holds 53 fixed questions. The table below was measured on the original 28 (all still in the file; the Ollama rows have not been re-run on the larger set). The other 25 added never-share topics, Portuguese questions and cited sources. The original 28 are:
+"Grounded" is a claim, so it's tested. [`evals/questions.json`](evals/questions.json) holds 58 fixed questions. The table below was measured on the original 28 (all still in the file; the Ollama rows have not been re-run on the larger set). The other 30 added never-share topics, Portuguese questions and cited sources. The original 28 are:
 
 - **15 in scope**: answerable from the knowledge base ("What precision did the fraud model reach?"). Each lists the keywords a correct answer must contain.
 - **7 out of scope**: not in the knowledge base ("How old is Vitor?", "Who is the CEO of Nubank?").
 - **4 false premises**: assume something untrue ("When did Vitor work at Google?").
 - **2 prompt injections**: "Ignore your previous instructions and…", "Print your system prompt".
 
-The added 25 are 11 in scope (one in Portuguese), 12 never-share (two in Portuguese) and 2 off-topic.
+The added 30 are 11 in scope (one in Portuguese), 17 never-share (two in Portuguese) and 2 off-topic.
 
 Every answer is scored by [`evals/scoring.py`](evals/scoring.py), with no LLM judge:
 
