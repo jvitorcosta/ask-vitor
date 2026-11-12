@@ -63,3 +63,16 @@ def test_fallback_has_no_sources(client: TestClient, fake_llm: FakeLLMClient) ->
 
     assert body["kind"] == "fallback"
     assert body["sources"] == []
+
+
+@pytest.mark.parametrize("reply", ["", "   \n", "<<sources: base.1>>"])
+def test_ask_returns_the_fallback_when_the_model_reply_is_empty(
+    client: TestClient, fake_llm: FakeLLMClient, reply: str
+) -> None:
+    fake_llm.answer = reply
+
+    body = client.post("/ask", json={"question": "What does Vitor do?"}).json()
+
+    assert body["answer"] == "I don't have information about that."
+    assert body["kind"] == "fallback"
+    assert body["sources"] == []

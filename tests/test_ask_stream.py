@@ -95,3 +95,16 @@ def test_stream_done_event_carries_kind_and_sources(
     assert done["kind"] == "answer"
     assert done["sources"][0]["id"] == "base.2"
     assert done["sources"][0]["label"] == "Knowledge base"
+
+
+def test_stream_shows_the_fallback_when_the_model_only_sends_a_trailer(
+    client: TestClient, fake_llm: FakeLLMClient
+) -> None:
+    fake_llm.tokens = ["<<sources: ", "base.1>>"]
+
+    response = client.post("/ask/stream", json={"question": "What does Vitor do?"})
+
+    assert parse_sse(response.text) == [
+        ("message", {"token": "I don't have information about that."}),
+        ("done", {"kind": "fallback", "sources": []}),
+    ]
