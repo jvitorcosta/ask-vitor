@@ -1,4 +1,4 @@
-from collections.abc import Iterator
+from collections.abc import AsyncIterator, Iterator
 
 import pytest
 from fastapi.testclient import TestClient
@@ -13,6 +13,8 @@ class FakeLLMClient:
     def __init__(self, answer: str = "  A canned answer.  ", fail: bool = False) -> None:
         self.answer = answer
         self.fail = fail
+        self.tokens: list[str] = ["A canned ", "answer."]
+        self.fail_after: int | None = None  # stream: raise after this many tokens
         self.received: list[list[Message]] = []
 
     async def chat(self, messages: list[Message]) -> str:
@@ -20,6 +22,15 @@ class FakeLLMClient:
         if self.fail:
             raise LLMError("boom")
         return self.answer
+
+    async def stream_chat(self, messages: list[Message]) -> AsyncIterator[str]:
+        self.received.append(messages)
+        if self.fail:
+            raise LLMError("boom")
+        for index, token in enumerate(self.tokens):
+            if index == self.fail_after:
+                raise LLMError("boom mid-stream")
+            yield token
 
 
 @pytest.fixture

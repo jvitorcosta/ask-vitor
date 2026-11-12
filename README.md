@@ -57,9 +57,46 @@ Response:
 | `422` | `question` missing, blank, or longer than 500 characters |
 | `503` | Ollama is unreachable or failed |
 
+### Stream the answer
+
+`POST /ask/stream` takes the same body and returns the answer as it's generated, as [Server-Sent Events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events):
+
+```bash
+curl -N -X POST http://127.0.0.1:8000/ask/stream \
+  -H "Content-Type: application/json" \
+  -d '{"question": "Where has Vitor worked?"}'
+```
+
+```
+data: {"token": "Vitor"}
+
+data: {"token": " has worked at"}
+
+event: done
+data: {}
+```
+
+Same `422` and `503` as `/ask`. If the model fails after the answer has started, the stream ends with `event: error` instead of `done`.
+
+## Web app
+
+`web/` is a small Next.js + TypeScript page that streams answers from `/ask/stream`, with a Stop button and a message for each failure. It needs [Node.js](https://nodejs.org) 20.9 or newer (`winget install OpenJS.NodeJS.LTS`).
+
+```powershell
+make dev           # terminal 1: the API on :8000
+make web-install   # once
+make web           # terminal 2: http://localhost:3000
+```
+
+Without make: `npm --prefix web install`, then `npm --prefix web run dev`. Point it at another API with `NEXT_PUBLIC_API_URL` (see `web/.env.example`).
+
+How the streaming works end to end, and why each choice was made: [docs/streaming-and-web-ui.md](docs/streaming-and-web-ui.md).
+
 ## How it works
 
 `POST /ask` → `QAService` gets the knowledge base from a `ContextProvider`, builds a grounded prompt (answer only from context, 1–3 sentences, fixed fallback when unknown) and sends it to the LLM through the `LLMClient` interface (Ollama implementation). The answer is returned as JSON.
+
+`POST /ask/stream` builds the same prompt, asks Ollama to stream (one JSON line per token), and forwards each token to the client as a Server-Sent Event. It waits for the first token before responding, so a dead model still returns a real `503`.
 
 ## Evaluation
 
@@ -117,6 +154,7 @@ Set via environment variables or `.env` (see `.env.example`):
 | `OLLAMA_BASE_URL` | `http://localhost:11434` |
 | `OLLAMA_MODEL` | `qwen2.5:1.5b` |
 | `OLLAMA_TIMEOUT_SECONDS` | `60` |
+| `CORS_ORIGINS` | `["http://localhost:3000"]` (browser origins allowed to call the API) |
 
 ## Commands
 
@@ -132,6 +170,8 @@ Recipes in the `Makefile` run in PowerShell 7 (`pwsh`). Run `make help` to list 
 | `make eval` | Run the eval question set against `OLLAMA_MODEL` (needs Ollama) |
 | `make lint` / `make format` | Check / fix lint and formatting |
 | `make check` | Lint + tests |
+| `make web-install` / `make web` | Install / run the web app (Node 20.9+) |
+| `make web-check` | Typecheck and build the web app |
 | `make clean` | Remove caches |
 
 ## Project layout
@@ -146,6 +186,11 @@ app/
   prompts/            # prompt templates
   llm/                # LLM client interface + Ollama implementation
   services/           # question-answering orchestration
+web/                  # Next.js + TypeScript page that streams answers
+  app/                # layout, page, styles
+  lib/askStream.ts    # POST /ask/stream client: parses Server-Sent Events
+docs/
+  streaming-and-web-ui.md  # study notes: how streaming works and why
 evals/
   questions.json      # fixed question set
   scoring.py          # pure scoring and summary table

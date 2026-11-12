@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 
 import httpx
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.api.routes import health, qa
@@ -28,6 +29,14 @@ async def llm_error_handler(request: Request, exc: LLMError) -> JSONResponse:
 
 def create_app() -> FastAPI:
     app = FastAPI(title="ask-vitor", lifespan=lifespan)
+    # The web app is served from another origin (localhost:3000), so the browser blocks its
+    # calls unless the API says that origin is allowed (CORS).
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=get_settings().cors_origins,
+        allow_methods=["GET", "POST"],
+        allow_headers=["Content-Type"],
+    )
     app.include_router(health.router)
     app.include_router(qa.router)
     app.add_exception_handler(LLMError, llm_error_handler)
