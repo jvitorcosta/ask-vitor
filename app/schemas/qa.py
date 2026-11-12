@@ -2,6 +2,8 @@ from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, StringConstraints
 
+from app.services.replies import ReplyKind
+
 Question = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=500)]
 
 
@@ -11,6 +13,12 @@ class AskRequest(BaseModel):
     )
 
     question: Question
+
+
+class SourceOut(BaseModel):
+    id: str
+    label: str
+    updated: str
 
 
 class AskResponse(BaseModel):
@@ -28,3 +36,5 @@ class AskResponse(BaseModel):
 
     question: str
     answer: str
+    kind: ReplyKind = "answer"
+    sources: list[SourceOut] = []

@@ -7,8 +7,8 @@ from fastapi.responses import StreamingResponse
 
 from app.api.dependencies import get_qa_service
 from app.core.exceptions import LLMError
-from app.schemas.qa import AskRequest, AskResponse
-from app.services.qa import QAService
+from app.schemas.qa import AskRequest, AskResponse, SourceOut
+from app.services.qa import Answer, QAService
 
 router = APIRouter(tags=["qa"])
 
@@ -25,7 +25,18 @@ async def ask(
     service: Annotated[QAService, Depends(get_qa_service)],
 ) -> AskResponse:
     answer = await service.answer(request.question)
-    return AskResponse(question=request.question, answer=answer)
+    return AskResponse(
+        question=request.question,
+        answer=answer.text,
+        kind=answer.kind,
+        sources=_sources_out(answer),
+    )
+
+
+def _sources_out(answer: Answer) -> list[SourceOut]:
+    return [
+        SourceOut(id=fact.id, label=fact.source, updated=fact.updated) for fact in answer.sources
+    ]
 
 
 def sse(data: dict, event: str | None = None) -> str:
@@ -50,22 +61,28 @@ async def ask_stream(
     request: AskRequest,
     service: Annotated[QAService, Depends(get_qa_service)],
 ) -> StreamingResponse:
-    tokens = service.answer_stream(request.question)
+    items = service.answer_stream(request.question)
 
-    # Wait for the first token before answering. Once a stream starts, the 200 status is
+    # Wait for the first item before answering. Once a stream starts, the 200 status is
     # already sent, so this is the last moment a failure (e.g. Ollama down) can become a
     # proper 503 instead of an error event. LLMError propagates to the app's 503 handler.
-    first = await anext(tokens, None)
+    first = await anext(items)
+
+    def frame(item: str | Answer) -> str:
+        if isinstance(item, Answer):
+            done = {
+                "kind": item.kind,
+                "sources": [source.model_dump() for source in _sources_out(item)],
+            }
+            return sse(done, event="done")
+        return sse({"token": item})
 
     async def events() -> AsyncIterator[str]:
         try:
-            if first is not None:
-                yield sse({"token": first})
-            async for token in tokens:
-                yield sse({"token": token})
+            yield frame(first)
+            async for item in items:
+                yield frame(item)
         except LLMError:
             yield sse(LLM_UNAVAILABLE, event="error")
-            return
-        yield sse({}, event="done")
 
     return StreamingResponse(events(), media_type="text/event-stream")

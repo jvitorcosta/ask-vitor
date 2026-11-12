@@ -49,7 +49,7 @@ async def run_model(model: str, cases: list[Case]) -> list[Scored]:
         results = []
         for case in cases:
             start = time.perf_counter()
-            answer = await service.answer(case.question)
+            answer = (await service.answer(case.question)).text
             latency = time.perf_counter() - start
             results.append(
                 score(case, answer, latency, context=KNOWLEDGE_BASE, fallback=FALLBACK_ANSWER)
