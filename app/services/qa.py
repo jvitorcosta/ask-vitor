@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 
 from app.knowledge.facts import Fact, KnowledgeProvider
 from app.llm.base import LLMClient
-from app.prompts.qa import build_messages
+from app.prompts.qa import FALLBACK_ANSWER, build_messages
 from app.services.replies import ReplyKind, reply_kind
 from app.services.sources import SourcesTrailer
 
@@ -21,6 +21,8 @@ class Answer:
 def _build_answer(text: str, cited_ids: list[str], facts: list[Fact]) -> Answer:
     """Classify the visible text and map cited ids to facts (unknown ids dropped)."""
     text = text.strip()
+    if not text:  # empty or refused reply: show the fixed fallback, never a blank answer
+        return Answer(text=FALLBACK_ANSWER, kind="fallback", sources=[], cited_ids=cited_ids)
     kind = reply_kind(text)
     if kind != "answer":
         return Answer(text=text, kind=kind, sources=[], cited_ids=cited_ids)
@@ -63,4 +65,7 @@ class QAService:
         if rest:
             shown.append(rest)
             yield rest
-        yield _build_answer("".join(shown), ids, facts)
+        answer = _build_answer("".join(shown), ids, facts)
+        if not shown:
+            yield answer.text  # nothing visible was streamed: show the fallback text
+        yield answer

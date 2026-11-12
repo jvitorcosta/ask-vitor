@@ -25,12 +25,25 @@ def anthropic_client(handler) -> AnthropicClient:
     return AnthropicClient(sdk, model="claude-haiku-5-5", max_tokens=300)
 
 
+def message_json(content: list[dict], stop_reason: str = "end_turn") -> dict:
+    return {
+        "id": "msg_1",
+        "type": "message",
+        "role": "assistant",
+        "model": "claude-haiku-5-5",
+        "content": content,
+        "stop_reason": stop_reason,
+        "stop_sequence": None,
+        "usage": {"input_tokens": 10, "output_tokens": 0},
+    }
+
+
 def sse(events: list[tuple[str, dict]]) -> str:
     return "".join(f"event: {name}\ndata: {json.dumps(data)}\n\n" for name, data in events)
 
 
 @pytest.mark.anyio
-async def test_chat_sends_system_with_cache_control_and_no_temperature() -> None:
+async def test_chat_sends_system_with_cache_control_no_sampling_and_no_thinking() -> None:
     seen: dict = {}
 
     def handler(request: httpx2.Request) -> httpx2.Response:
@@ -58,8 +71,9 @@ async def test_chat_sends_system_with_cache_control_and_no_temperature() -> None
     assert seen["messages"] == [{"role": "user", "content": QUESTION}]
     assert seen["model"] == "claude-haiku-5-5"
     assert seen["max_tokens"] == 300
-    assert "temperature" not in seen
-    assert "thinking" not in seen
+    assert seen["thinking"] == {"type": "disabled"}
+    for param in ("temperature", "top_p", "top_k"):
+        assert param not in seen
 
 
 @pytest.mark.anyio
@@ -116,7 +130,9 @@ async def test_stream_chat_yields_text_deltas() -> None:
     )
 
     def handler(request: httpx2.Request) -> httpx2.Response:
-        assert json.loads(request.content)["stream"] is True
+        sent = json.loads(request.content)
+        assert sent["stream"] is True
+        assert sent["thinking"] == {"type": "disabled"}
         return httpx2.Response(200, text=body, headers={"content-type": "text/event-stream"})
 
     client = anthropic_client(handler)
@@ -159,3 +175,37 @@ def test_startup_fails_without_api_key(monkeypatch: pytest.MonkeyPatch, key: str
     with pytest.raises(RuntimeError, match="ANTHROPIC_API_KEY is required"):
         with TestClient(app):
             pass
+
+
+@pytest.mark.anyio
+async def test_chat_returns_empty_text_when_the_model_refuses() -> None:
+    def handler(request: httpx2.Request) -> httpx2.Response:
+        return httpx2.Response(200, json=message_json([], stop_reason="refusal"))
+
+    assert await anthropic_client(handler).chat(MESSAGES) == ""
+
+
+@pytest.mark.anyio
+async def test_stream_chat_yields_nothing_when_the_model_refuses() -> None:
+    body = sse(
+        [
+            (
+                "message_start",
+                {"type": "message_start", "message": message_json([], stop_reason="refusal")},
+            ),
+            (
+                "message_delta",
+                {
+                    "type": "message_delta",
+                    "delta": {"stop_reason": "refusal", "stop_sequence": None},
+                    "usage": {"output_tokens": 0},
+                },
+            ),
+            ("message_stop", {"type": "message_stop"}),
+        ]
+    )
+
+    def handler(request: httpx2.Request) -> httpx2.Response:
+        return httpx2.Response(200, text=body, headers={"content-type": "text/event-stream"})
+
+    assert [t async for t in anthropic_client(handler).stream_chat(MESSAGES)] == []

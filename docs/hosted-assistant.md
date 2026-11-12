@@ -147,8 +147,10 @@ File: `app/llm/anthropic.py`.
 
 For a grounded assistant you would normally set temperature 0 so the same question gives the
 same answer, and the Ollama runs in the README did. Claude Haiku 5.5 rejects sampling values
-other than the default, so the Anthropic request sends no `temperature`, `top_p`, `top_k` or
-`thinking`. The consistency has to come from the prompt (fixed replies, short answers, explicit
+other than the default, so the Anthropic request sends no `temperature`, `top_p`, `top_k`. It does
+send `thinking={"type": "disabled"}`: Haiku 5.5 thinks adaptively by default, and thinking tokens
+count toward `max_tokens` (300), so an answer could be cut short, lose its `<<sources:>>` trailer
+and delay the first token. The consistency has to come from the prompt (fixed replies, short answers, explicit
 rules) and from the evals, which check the behaviour instead of assuming it. Run-to-run wording
 can still differ; the evals are written to accept any correct wording and to score the contract
 (fallback strings, sources, no leaked trailer), not the exact sentence.

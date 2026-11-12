@@ -16,7 +16,8 @@ class AnthropicClient:
 
     def _request(self, messages: list[Message]) -> dict:
         # The system prompt (facts + rules) is identical across questions, so it is marked as
-        # cacheable. No temperature/top_p/top_k/thinking: Haiku 5.5 rejects non-default values.
+        # cacheable. No temperature/top_p/top_k: Haiku 5.5 rejects non-default values. Thinking is
+        # off: its tokens would count toward max_tokens and could cut the answer and its trailer.
         system_text = "\n\n".join(m["content"] for m in messages if m["role"] == "system")
         rest = [
             {"role": m["role"], "content": m["content"]} for m in messages if m["role"] != "system"
@@ -28,6 +29,7 @@ class AnthropicClient:
                 {"type": "text", "text": system_text, "cache_control": {"type": "ephemeral"}}
             ],
             "messages": rest,
+            "thinking": {"type": "disabled"},
         }
 
     async def chat(self, messages: list[Message]) -> str:
