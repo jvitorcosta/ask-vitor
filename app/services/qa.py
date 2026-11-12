@@ -1,6 +1,6 @@
 from collections.abc import AsyncIterator
 from contextlib import aclosing
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from app.knowledge.facts import Fact, KnowledgeProvider
 from app.llm.base import LLMClient
@@ -14,6 +14,8 @@ class Answer:
     text: str
     kind: ReplyKind
     sources: list[Fact]
+    # Every id the model cited, before unknown ones were dropped from `sources` (for evals).
+    cited_ids: list[str] = field(default_factory=list)
 
 
 def _build_answer(text: str, cited_ids: list[str], facts: list[Fact]) -> Answer:
@@ -21,9 +23,14 @@ def _build_answer(text: str, cited_ids: list[str], facts: list[Fact]) -> Answer:
     text = text.strip()
     kind = reply_kind(text)
     if kind != "answer":
-        return Answer(text=text, kind=kind, sources=[])
+        return Answer(text=text, kind=kind, sources=[], cited_ids=cited_ids)
     by_id = {fact.id: fact for fact in facts}
-    return Answer(text=text, kind=kind, sources=[by_id[i] for i in cited_ids if i in by_id])
+    return Answer(
+        text=text,
+        kind=kind,
+        sources=[by_id[i] for i in cited_ids if i in by_id],
+        cited_ids=cited_ids,
+    )
 
 
 class QAService:
