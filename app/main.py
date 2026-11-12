@@ -10,6 +10,7 @@ from app.api.routes import health, qa
 from app.core.config import Settings, get_settings
 from app.core.exceptions import LLMError
 from app.core.logstore import LogStore, MemoryStore, UpstashStore
+from app.core.ratelimit import RateLimited, RateLimiter
 from app.knowledge.context import JsonKnowledgeProvider, StaticKnowledgeProvider
 from app.knowledge.facts import KnowledgeProvider
 from app.llm.ollama import OllamaClient
@@ -50,8 +51,13 @@ async def llm_error_handler(request: Request, exc: LLMError) -> JSONResponse:
     return JSONResponse(status_code=503, content={"detail": "LLM service unavailable"})
 
 
+async def rate_limited_handler(request: Request, exc: RateLimited) -> JSONResponse:
+    return JSONResponse(status_code=429, content={"detail": "rate_limited"})
+
+
 def create_app() -> FastAPI:
     app = FastAPI(title="ask-vitor", lifespan=lifespan)
+    app.state.rate_limiter = RateLimiter(get_settings().rate_limit_per_hour, 3600)
     # The web app is served from another origin (localhost:3000), so the browser blocks its
     # calls unless the API says that origin is allowed (CORS).
     app.add_middleware(
@@ -63,6 +69,7 @@ def create_app() -> FastAPI:
     app.include_router(health.router)
     app.include_router(qa.router)
     app.add_exception_handler(LLMError, llm_error_handler)
+    app.add_exception_handler(RateLimited, rate_limited_handler)
     return app
 
 

@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     # Both set: the question log goes to Upstash Redis. Otherwise it stays in memory.
     upstash_redis_rest_url: str = ""
     upstash_redis_rest_token: SecretStr | None = None
+    # Questions per visitor per hour, and questions across all visitors per UTC day.
+    rate_limit_per_hour: int = 10
+    daily_question_cap: int = 300
 
 
 @lru_cache

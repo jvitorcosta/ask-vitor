@@ -8,7 +8,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 
-from app.api.dependencies import get_log_store, get_qa_service
+from app.api.dependencies import enforce_limits, get_log_store, get_qa_service
 from app.core.exceptions import LLMError
 from app.core.logstore import LogRecord, LogStore, redact
 from app.schemas.qa import AskRequest, AskResponse, SourceOut
@@ -22,7 +22,11 @@ LLM_UNAVAILABLE = {"detail": "LLM service unavailable"}
 @router.post(
     "/ask",
     response_model=AskResponse,
-    responses={503: {"description": "LLM service unavailable"}},
+    dependencies=[Depends(enforce_limits)],
+    responses={
+        429: {"description": "Rate limited"},
+        503: {"description": "LLM service unavailable"},
+    },
 )
 async def ask(
     request: AskRequest,
@@ -71,7 +75,9 @@ def sse(data: dict, event: str | None = None) -> str:
 @router.post(
     "/ask/stream",
     response_class=StreamingResponse,
+    dependencies=[Depends(enforce_limits)],
     responses={
+        429: {"description": "Rate limited"},
         200: {
             "content": {"text/event-stream": {}},
             "description": 'Events: `data: {"token": "..."}` per piece of the answer, then '
