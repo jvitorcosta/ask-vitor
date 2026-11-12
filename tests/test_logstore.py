@@ -77,7 +77,7 @@ def test_memory_store_counts_per_day() -> None:
     assert counts == [1, 2, 1]
 
 
-def test_stream_logs_after_done(client: TestClient, store: MemoryStore) -> None:
+def test_stream_logs_the_answer(client: TestClient, store: MemoryStore) -> None:
     client.post("/ask/stream", json={"question": "Mail a.b@x.com about Nubank?"})
 
     (record,) = store.records
@@ -120,3 +120,32 @@ def test_mid_stream_error_is_not_logged(
     client.post("/ask/stream", json={"question": "What does Vitor do?"})
 
     assert store.records == []
+
+
+def test_stream_logs_before_done_so_a_disconnect_cannot_drop_it(fake_llm: FakeLLMClient) -> None:
+    # A client that stops reading right after `done` (closing the body iterator, as a disconnect
+    # does) must still leave the record behind.
+    from app.api.routes.qa import ask_stream
+    from app.knowledge.context import StaticKnowledgeProvider
+    from app.schemas.qa import AskRequest
+    from app.services.qa import QAService
+
+    store = MemoryStore()
+    service = QAService(llm=fake_llm, knowledge=StaticKnowledgeProvider())
+
+    async def run() -> list[str]:
+        response = await ask_stream(AskRequest(question="What does Vitor do?"), service, store)
+        body = response.body_iterator
+        seen: list[str] = []
+        async for chunk in body:
+            seen.append(str(chunk))
+            if str(chunk).startswith("event: done"):
+                break
+        await body.aclose()  # type: ignore[attr-defined]  # an async generator
+        return seen
+
+    seen = asyncio.run(run())
+
+    assert seen[-1].startswith("event: done")
+    (record,) = store.records
+    assert record.kind == "answer" and record.answer == "A canned answer."

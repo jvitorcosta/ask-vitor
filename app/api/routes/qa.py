@@ -113,15 +113,18 @@ async def ask_stream(
             return sse(done, event="done")
         return sse({"token": item})
 
+    # The record is saved before `done` goes out: a client that disconnects once it has the
+    # answer cancels this generator at its next yield, which would drop a write placed after it.
+    # Latency still runs to the end of the answer, since the Answer item comes last.
     async def events() -> AsyncIterator[str]:
         try:
-            yield frame(first)
             if isinstance(first, Answer):
                 await _log(log_store, request.question, first, started)
+            yield frame(first)
             async for item in items:
-                yield frame(item)
                 if isinstance(item, Answer):
                     await _log(log_store, request.question, item, started)
+                yield frame(item)
         except LLMError:
             yield sse(LLM_UNAVAILABLE, event="error")
 
