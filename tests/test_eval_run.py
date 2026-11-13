@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
 
+import pytest
+
 from evals.run import write_summary
 from evals.scoring import Summary
 
@@ -31,3 +33,20 @@ def test_summary_keeps_rows_from_earlier_runs(tmp_path: Path) -> None:
     assert "| `llama3.2:3b` | 7/10 |" in table
     assert "| `claude-haiku-5-5` | 9/10 |" in table
     assert (tmp_path / "summary.md").read_text(encoding="utf-8") == table + "\n"
+
+
+def test_summary_skips_results_files_it_cannot_parse(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    fake_result(tmp_path, "llama3.2-3b.json", "llama3.2:3b", 7)
+    old = {"model": "old", "summary": {"model": "old", "accuracy": 0.5}, "results": []}
+    (tmp_path / "old-schema.json").write_text(json.dumps(old), encoding="utf-8")
+    (tmp_path / "broken.json").write_text("{not json", encoding="utf-8")
+
+    table = write_summary(tmp_path)
+
+    assert "| `llama3.2:3b` | 7/10 |" in table
+    assert "old" not in table
+    out = capsys.readouterr().out
+    assert "old-schema.json" in out
+    assert "broken.json" in out

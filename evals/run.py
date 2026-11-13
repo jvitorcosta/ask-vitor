@@ -95,10 +95,12 @@ def write_results(model: str, results: list[Scored]) -> None:
 
 def write_summary(results_dir: Path = RESULTS_DIR) -> str:
     """Rebuild summary.md from every model's results file, not only this run's models."""
-    summaries = [
-        Summary(**json.loads(path.read_text(encoding="utf-8"))["summary"])
-        for path in sorted(results_dir.glob("*.json"))
-    ]
+    summaries = []
+    for path in sorted(results_dir.glob("*.json")):
+        try:
+            summaries.append(Summary(**json.loads(path.read_text(encoding="utf-8"))["summary"]))
+        except (ValueError, KeyError, TypeError) as exc:
+            print(f"warning: skipping {path.name}: {type(exc).__name__}: {exc}")
     table = markdown_table(summaries)
     (results_dir / "summary.md").write_text(table + "\n", encoding="utf-8")
     return table
