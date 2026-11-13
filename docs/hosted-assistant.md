@@ -239,7 +239,7 @@ Storage:
 
 File: `evals/questions.json`, `evals/scoring.py`, `evals/run.py`, `evals/knowledge.sample.json`.
 
-The question set grew from 28 to 58. The original 28 are unchanged; the new 30 cover personal and
+The question set grew from 28 to 60. The original 28 are unchanged; the new 32 cover personal and
 live-data facts, every never-share category (including location probing), Portuguese questions
 and off-topic ones. Scoring is rule-based, with no LLM judge:
 
@@ -265,7 +265,7 @@ decides. No numbers are filled in until then.
 | `qwen2.5:0.5b` | 28 | 16/28 | 93% | 15% | 31% | 11% | 0.15s | 0.31s |
 | `qwen2.5:1.5b` | 28 | 24/28 | 100% | 69% | 77% | 4% | 0.33s | 0.75s |
 | `llama3.2:3b` | 28 | 25/28 | 100% | 77% | 92% | 0% | 0.74s | 1.47s |
-| `claude-haiku-5-5` | 58 | not run yet | | | | | | |
+| `claude-haiku-5-5` | 60 | not run yet | | | | | | |
 
 To fill in the last row:
 
