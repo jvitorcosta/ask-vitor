@@ -22,15 +22,17 @@ class AnthropicClient:
         rest = [
             {"role": m["role"], "content": m["content"]} for m in messages if m["role"] != "system"
         ]
-        return {
+        request: dict = {
             "model": self._model,
             "max_tokens": self._max_tokens,
-            "system": [
-                {"type": "text", "text": system_text, "cache_control": {"type": "ephemeral"}}
-            ],
             "messages": rest,
             "thinking": {"type": "disabled"},
         }
+        if system_text:
+            request["system"] = [
+                {"type": "text", "text": system_text, "cache_control": {"type": "ephemeral"}}
+            ]
+        return request
 
     async def chat(self, messages: list[Message]) -> str:
         try:

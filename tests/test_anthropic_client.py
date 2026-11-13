@@ -243,3 +243,20 @@ def test_timeout_defaults_to_30_seconds() -> None:
 
     assert Settings(_env_file=None).anthropic_timeout_seconds == 30.0
 
+
+@pytest.mark.anyio
+async def test_empty_system_text_omits_the_system_param() -> None:
+    seen: dict = {}
+
+    def handler(request: httpx2.Request) -> httpx2.Response:
+        seen.update(json.loads(request.content))
+        return httpx2.Response(200, json=message_json([{"type": "text", "text": "Hi."}]))
+
+    messages: list[Message] = [
+        {"role": "system", "content": ""},
+        {"role": "user", "content": QUESTION},
+    ]
+    await anthropic_client(handler).chat(messages)
+
+    assert "system" not in seen
+    assert seen["messages"] == [{"role": "user", "content": QUESTION}]
