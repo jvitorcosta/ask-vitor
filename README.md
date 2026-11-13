@@ -40,9 +40,7 @@ Invoke-RestMethod -Method Post http://127.0.0.1:8000/ask `
 ```
 
 ```bash
-curl -X POST http://127.0.0.1:8000/ask \
-  -H "Content-Type: application/json" \
-  -d '{"question": "Where has Vitor worked?"}'
+curl -w "\n" -X POST http://127.0.0.1:8000/ask -H "Content-Type: application/json" -d '{"question": "Where has Vitor worked?"}'
 ```
 
 Response:
@@ -66,9 +64,7 @@ Response:
 `POST /ask/stream` takes the same body and returns the answer as it's generated, as [Server-Sent Events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events):
 
 ```bash
-curl -N -X POST http://127.0.0.1:8000/ask/stream \
-  -H "Content-Type: application/json" \
-  -d '{"question": "Where has Vitor worked?"}'
+curl -N -w "\n" -X POST http://127.0.0.1:8000/ask/stream -H "Content-Type: application/json" -d '{"question": "Where has Vitor worked?"}'
 ```
 
 ```
@@ -140,30 +136,33 @@ Vercel runs Python 3.12 (its default), so the project targets 3.12 locally too.
 
 ### Smoke test
 
-Replace `<project>` with the Vercel project name.
+Replace `<project>` with the Vercel project name. Each command is a single line, so it pastes into PowerShell and bash alike. On Windows PowerShell, call `curl.exe` (plain `curl` is an alias for `Invoke-WebRequest`) and write the JSON body with the quotes escaped, as below.
 
 ```bash
 # Answer: token frames, then `event: done` with "kind": "answer"
-curl -N -X POST https://<project>.vercel.app/ask/stream \
-  -H "Content-Type: application/json" \
-  -d '{"question":"Where has Vitor worked?"}'
+curl -N -w "\n" -X POST https://<project>.vercel.app/ask/stream -H "Content-Type: application/json" -d '{"question":"Where has Vitor worked?"}'
 
 # Fallback: "Não tenho informação sobre isso." and "kind": "fallback"
-curl -N -X POST https://<project>.vercel.app/ask/stream \
-  -H "Content-Type: application/json" \
-  -d '{"question":"Qual o salário dele?"}'
-
-# Rate limit: the 11th quick request returns 429
-for i in $(seq 1 11); do
-  curl -s -o /dev/null -w "%{http_code}\n" -X POST https://<project>.vercel.app/ask/stream \
-    -H "Content-Type: application/json" \
-    -d '{"question":"Where has Vitor worked?"}'
-done
+curl -N -w "\n" -X POST https://<project>.vercel.app/ask/stream -H "Content-Type: application/json" -d '{"question":"Qual o salário dele?"}'
 
 # CORS preflight from the site origin: expect access-control-allow-origin: https://jvitorcosta.github.io
-curl -i -X OPTIONS https://<project>.vercel.app/ask/stream \
-  -H "Origin: https://jvitorcosta.github.io" \
-  -H "Access-Control-Request-Method: POST"
+curl -i -w "\n" -X OPTIONS https://<project>.vercel.app/ask/stream -H "Origin: https://jvitorcosta.github.io" -H "Access-Control-Request-Method: POST"
+```
+
+PowerShell variant of the answer check:
+
+```powershell
+curl.exe -N -w "\n" -X POST https://<project>.vercel.app/ask/stream -H "Content-Type: application/json" -d '{\"question\":\"Where has Vitor worked?\"}'
+```
+
+Rate limit: the 11th quick request returns `429` (the loop prints one status code per line).
+
+```bash
+for i in $(seq 1 11); do curl -s -o /dev/null -w "%{http_code}\n" -X POST https://<project>.vercel.app/ask/stream -H "Content-Type: application/json" -d '{"question":"Where has Vitor worked?"}'; done
+```
+
+```powershell
+1..11 | ForEach-Object { curl.exe -s -o NUL -w "%{http_code}\n" -X POST https://<project>.vercel.app/ask/stream -H "Content-Type: application/json" -d '{\"question\":\"Where has Vitor worked?\"}' }
 ```
 
 ## Evaluation
