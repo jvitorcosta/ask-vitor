@@ -28,10 +28,10 @@ def test_stream_sends_tokens_then_done(client: TestClient, fake_llm: FakeLLMClie
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("text/event-stream")
     assert parse_sse(response.text) == [
-        ("message", {"token": "Vitor "}),
-        ("message", {"token": "works "}),
-        ("message", {"token": "with ML."}),
-        ("done", {}),
+        ("message", {"token": "Vitor"}),
+        ("message", {"token": " works"}),
+        ("message", {"token": " with ML."}),
+        ("done", {"kind": "answer", "sources": []}),
     ]
 
 
@@ -56,7 +56,7 @@ def test_stream_sends_error_event_when_llm_fails_mid_answer(
 
     assert response.status_code == 200
     assert parse_sse(response.text) == [
-        ("message", {"token": "Vitor "}),
+        ("message", {"token": "Vitor"}),
         ("error", {"detail": "LLM service unavailable"}),
     ]
 
@@ -79,3 +79,32 @@ def test_cors_allows_the_web_app(client: TestClient) -> None:
 
     assert response.status_code == 200
     assert response.headers["access-control-allow-origin"] == "http://localhost:3000"
+
+
+def test_stream_done_event_carries_kind_and_sources(
+    client: TestClient, fake_llm: FakeLLMClient
+) -> None:
+    fake_llm.tokens = ["He worked", " at Nubank.\n<<sour", "ces: base.2>>"]
+
+    events = parse_sse(client.post("/ask/stream", json={"question": "Where?"}).text)
+
+    tokens = [data["token"] for name, data in events if name == "message"]
+    assert "".join(tokens) == "He worked at Nubank."
+    name, done = events[-1]
+    assert name == "done"
+    assert done["kind"] == "answer"
+    assert done["sources"][0]["id"] == "base.2"
+    assert done["sources"][0]["label"] == "Knowledge base"
+
+
+def test_stream_shows_the_fallback_when_the_model_only_sends_a_trailer(
+    client: TestClient, fake_llm: FakeLLMClient
+) -> None:
+    fake_llm.tokens = ["<<sources: ", "base.1>>"]
+
+    response = client.post("/ask/stream", json={"question": "What does Vitor do?"})
+
+    assert parse_sse(response.text) == [
+        ("message", {"token": "I don't have information about that."}),
+        ("done", {"kind": "fallback", "sources": []}),
+    ]

@@ -11,6 +11,8 @@ def test_ask_returns_answer(client: TestClient, fake_llm: FakeLLMClient) -> None
     assert response.json() == {
         "question": "What does Vitor do?",
         "answer": "A canned answer.",
+        "kind": "answer",
+        "sources": [],
     }
     assert len(fake_llm.received) == 1
 
@@ -33,3 +35,44 @@ def test_ask_returns_503_when_llm_fails(client: TestClient, fake_llm: FakeLLMCli
 
     assert response.status_code == 503
     assert response.json() == {"detail": "LLM service unavailable"}
+
+
+def test_ask_returns_kind_and_sources(client: TestClient, fake_llm: FakeLLMClient) -> None:
+    fake_llm.answer = "He worked at Nubank.\n<<sources: base.2>>"
+
+    body = client.post("/ask", json={"question": "Where?"}).json()
+
+    assert body["answer"] == "He worked at Nubank."
+    assert body["kind"] == "answer"
+    assert body["sources"][0]["id"] == "base.2"
+    assert body["sources"][0]["label"] == "Knowledge base"
+
+
+def test_unknown_source_ids_are_dropped(client: TestClient, fake_llm: FakeLLMClient) -> None:
+    fake_llm.answer = "He worked at Nubank.\n<<sources: base.2, nope>>"
+
+    body = client.post("/ask", json={"question": "Where?"}).json()
+
+    assert [source["id"] for source in body["sources"]] == ["base.2"]
+
+
+def test_fallback_has_no_sources(client: TestClient, fake_llm: FakeLLMClient) -> None:
+    fake_llm.answer = "I don't have information about that."
+
+    body = client.post("/ask", json={"question": "Shoe size?"}).json()
+
+    assert body["kind"] == "fallback"
+    assert body["sources"] == []
+
+
+@pytest.mark.parametrize("reply", ["", "   \n", "<<sources: base.1>>"])
+def test_ask_returns_the_fallback_when_the_model_reply_is_empty(
+    client: TestClient, fake_llm: FakeLLMClient, reply: str
+) -> None:
+    fake_llm.answer = reply
+
+    body = client.post("/ask", json={"question": "What does Vitor do?"}).json()
+
+    assert body["answer"] == "I don't have information about that."
+    assert body["kind"] == "fallback"
+    assert body["sources"] == []

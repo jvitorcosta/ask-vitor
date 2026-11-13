@@ -1,0 +1,157 @@
+{
+  "version": 1,
+  "generated": "2026-11-12",
+  "note": "Sample snapshot for evals. The live.* items are made-up sample data, not Vitor's real listening, watching, reading or training.",
+  "facts": [
+    {
+      "id": "base.1",
+      "source": "Knowledge base",
+      "updated": "2026-11-12",
+      "text": "Vitor Pinheiro is an AI/ML engineer from Manaus, Brazil (UTC-4) with 5 years building production ML and LLM systems, mostly in fintech. He is open to remote roles."
+    },
+    {
+      "id": "base.2",
+      "source": "Knowledge base",
+      "updated": "2026-11-12",
+      "text": "Vitor has worked on lending at Nubank, on fraud detection for Coastal Community Bank through Qubika, and on demand forecasting for Comgás at EloGroup."
+    },
+    {
+      "id": "base.3",
+      "source": "Knowledge base",
+      "updated": "2026-11-12",
+      "text": "At Nubank, Vitor built a LangGraph support agent over the team's code, docs and Slack history that resolves 80% of support tickets on its own (10 to 2 a week)."
+    },
+    {
+      "id": "base.4",
+      "source": "Knowledge base",
+      "updated": "2026-11-12",
+      "text": "For Coastal Community Bank, Vitor built a LightGBM fraud model that cut transaction-monitoring alerts by 99.2% and raised analyst-facing precision from 1.29% to 76.4% on a 24-month backtest, with a SHAP and LLM layer that explains every alert."
+    },
+    {
+      "id": "base.5",
+      "source": "Knowledge base",
+      "updated": "2026-11-12",
+      "text": "At EloGroup, Vitor's time-series work fed an ensemble forecast that helped Comgás avoid roughly R$200M in contractual fines in three months."
+    },
+    {
+      "id": "base.6",
+      "source": "Knowledge base",
+      "updated": "2026-11-12",
+      "text": "Vitor works mainly in Python, with Spark, Databricks and LangGraph."
+    },
+    {
+      "id": "base.7",
+      "source": "Knowledge base",
+      "updated": "2026-11-12",
+      "text": "Outside work, Vitor builds side projects such as Car Cyberdeck, ESP32 firmware that shows Spotify on his car dashboard as a Pokémon battle, and SolvedOR, his bachelor's thesis, an app that solves linear and integer programs."
+    },
+    {
+      "id": "about.morning",
+      "source": "About Vitor",
+      "updated": "2026-11-12",
+      "text": "Vitor starts the day around 8 with coffee (sweetener, no sugar) and a light breakfast, often tapioca com queijo, a Manaus classic."
+    },
+    {
+      "id": "about.meals",
+      "source": "About Vitor",
+      "updated": "2026-11-12",
+      "text": "Vitor eats three meals a day and likes protein (meat, rice and beans). He is a fan of McDonald's and KFC and loves chicken."
+    },
+    {
+      "id": "about.home",
+      "source": "About Vitor",
+      "updated": "2026-11-12",
+      "text": "Vitor lives with his family in Manaus, and his room doubles as his workshop (three screens, hardware projects)."
+    },
+    {
+      "id": "about.ai",
+      "source": "About Vitor",
+      "updated": "2026-11-12",
+      "text": "Vitor uses Claude Code for almost everything, including planning his training routine. He likes connecting AI to everyday gadgets (phone, watch, car)."
+    },
+    {
+      "id": "about.movies",
+      "source": "About Vitor",
+      "updated": "2026-11-12",
+      "text": "Vitor is a big movie fan and goes to the cinema often."
+    },
+    {
+      "id": "about.culture",
+      "source": "About Vitor",
+      "updated": "2026-11-12",
+      "text": "Vitor is into Japanese and Chinese culture and studies Mandarin."
+    },
+    {
+      "id": "about.sports",
+      "source": "About Vitor",
+      "updated": "2026-11-12",
+      "text": "Beach volleyball is Vitor's favorite sport (the beach, technique, explosiveness). He also plays indoor volleyball, trains at the gym (full-body training now) and runs. He is taking a break from boxing and will be back next year."
+    },
+    {
+      "id": "about.car",
+      "source": "About Vitor",
+      "updated": "2026-11-12",
+      "text": "Vitor drives a Honda City (since April 2026) and is working on it to improve the driving and steering feel."
+    },
+    {
+      "id": "about.travel",
+      "source": "About Vitor",
+      "updated": "2026-11-12",
+      "text": "Vitor worked in São Paulo for Nubank and loves Pinheiros. He often goes to the Northeast coast (Ceará, Pernambuco) for the beaches with his family, and loved his first trip to João Pessoa recently. He likes Pará, where he has family."
+    },
+    {
+      "id": "about.music",
+      "source": "About Vitor",
+      "updated": "2026-11-12",
+      "text": "Vitor listens to music all day (driving, studying, running, gym), with playlists for each context."
+    },
+    {
+      "id": "about.roles",
+      "source": "About Vitor",
+      "updated": "2026-11-12",
+      "text": "Vitor is open to new roles."
+    },
+    {
+      "id": "repo.solvedor",
+      "source": "GitHub",
+      "updated": "2026-11-12",
+      "text": "SolvedOR is a public GitHub repository: Vitor's bachelor's thesis, an app that solves linear and integer programs."
+    },
+    {
+      "id": "repo.car-cyberdeck",
+      "source": "GitHub",
+      "updated": "2026-11-12",
+      "text": "Car Cyberdeck is a public GitHub repository with the ESP32 firmware that shows Spotify on Vitor's car dashboard as a Pokémon battle."
+    },
+    {
+      "id": "live.song",
+      "source": "Spotify",
+      "updated": "2026-11-12",
+      "text": "Vitor's most recent Spotify track is \"Blinding Lights\" by The Weeknd."
+    },
+    {
+      "id": "live.film",
+      "source": "Letterboxd",
+      "updated": "2026-11-12",
+      "text": "Vitor recently watched Interstellar, according to his Letterboxd diary."
+    },
+    {
+      "id": "live.book",
+      "source": "Goodreads",
+      "updated": "2026-11-12",
+      "text": "Vitor is currently reading Designing Machine Learning Systems by Chip Huyen, according to Goodreads."
+    },
+    {
+      "id": "live.anime",
+      "source": "MyAnimeList",
+      "updated": "2026-11-12",
+      "text": "Vitor recently watched Cowboy Bebop, according to MyAnimeList."
+    },
+    {
+      "id": "live.activity",
+      "source": "Strava",
+      "updated": "2026-11-12",
+      "text": "Vitor's latest Strava activity was a run of 5.2 km."
+    }
+  ]
+}

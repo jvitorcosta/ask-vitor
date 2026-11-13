@@ -1,0 +1,9 @@
+.venv/
+web/
+evals/results/
+tests/
+docs/
+.superpowers/
+.pytest_cache/
+.ruff_cache/
+.env

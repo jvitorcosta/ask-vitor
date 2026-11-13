@@ -6,13 +6,13 @@ APP := app/main.py
 OLLAMA_MODEL ?= qwen2.5:1.5b
 
 .DEFAULT_GOAL := help
-.PHONY: help install env model dev run test eval lint format check clean web-install web web-check
+.PHONY: help install env model dev run test eval eval-haiku lint format check clean web-install web web-check
 
 help: ## Show available commands
 	@Select-String -Path $(firstword $(MAKEFILE_LIST)) -Pattern '^([a-zA-Z_-]+):.*?## (.*)$$' | ForEach-Object { '{0,-10} {1}' -f $$_.Matches[0].Groups[1].Value, $$_.Matches[0].Groups[2].Value }
 
-install: ## Install Python 3.11 and all dependencies (incl. dev)
-	uv python install 3.11
+install: ## Install Python 3.12 and all dependencies (incl. dev)
+	uv python install 3.12
 	uv sync
 
 env: ## Create .env from .env.example (if missing)
@@ -32,6 +32,9 @@ test: ## Run the test suite
 
 eval: ## Run the eval question set against OLLAMA_MODEL (needs Ollama)
 	uv run python -m evals.run --models $(OLLAMA_MODEL)
+
+eval-haiku: ## Run the eval set against Claude Haiku 5.5 (needs ANTHROPIC_API_KEY; costs a few cents)
+	uv run python -m evals.run --backend anthropic --models claude-haiku-5-5 --knowledge evals/knowledge.sample.json
 
 lint: ## Lint and check formatting
 	uv run ruff check .

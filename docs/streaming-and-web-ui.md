@@ -205,4 +205,5 @@ Folder: `web/`. Deliberately small: one page, one client module, one stylesheet.
 
 - A browser-side test of `askStream` (feed it a fake stream split at awkward places).
 - Showing time to first token in the UI.
-- Rate limiting, and auth if it were ever public.
+- Auth, if it were ever more than a public demo. (Rate limiting, a daily cap, citations and the
+  hosted Claude backend were added later: see [hosted-assistant.md](hosted-assistant.md).)
