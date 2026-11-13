@@ -132,6 +132,12 @@ async def test_stream_chat_yields_text_deltas() -> None:
     def handler(request: httpx2.Request) -> httpx2.Response:
         sent = json.loads(request.content)
         assert sent["stream"] is True
+        assert sent["model"] == "claude-haiku-5-5"
+        assert sent["max_tokens"] == 300
+        assert sent["system"] == [
+            {"type": "text", "text": SYSTEM, "cache_control": {"type": "ephemeral"}}
+        ]
+        assert sent["messages"] == [{"role": "user", "content": QUESTION}]
         assert sent["thinking"] == {"type": "disabled"}
         return httpx2.Response(200, text=body, headers={"content-type": "text/event-stream"})
 
@@ -236,3 +242,4 @@ def test_timeout_defaults_to_30_seconds() -> None:
     from app.core.config import Settings
 
     assert Settings(_env_file=None).anthropic_timeout_seconds == 30.0
+
