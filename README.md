@@ -122,6 +122,7 @@ Environment variables (set in the Vercel project; see `.env.example` for the ful
 | `LLM_BACKEND` | `anthropic` |
 | `ANTHROPIC_API_KEY` | key from the `ask-vitor-site` workspace (secret) |
 | `ANTHROPIC_MODEL` | `claude-haiku-5-5` (default) |
+| `ANTHROPIC_TIMEOUT_SECONDS` | Claude API timeout in seconds (default `30`) |
 | `KNOWLEDGE_SOURCE` | `https://jvitorcosta.github.io/knowledge.json` |
 | `CORS_ORIGINS` | `["https://jvitorcosta.github.io"]` |
 | `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | added by the Upstash integration |
@@ -227,6 +228,7 @@ Set via environment variables or `.env` (see `.env.example`):
 | `LLM_BACKEND` | `ollama` (or `anthropic` for Claude) |
 | `ANTHROPIC_API_KEY` | unset (secret; required when `LLM_BACKEND=anthropic`) |
 | `ANTHROPIC_MODEL` | `claude-haiku-5-5` |
+| `ANTHROPIC_TIMEOUT_SECONDS` | `30` (seconds before a Claude API call is abandoned; no retries) |
 | `MAX_OUTPUT_TOKENS` | `300` (cap on the model's answer length, Claude backend) |
 | `KNOWLEDGE_SOURCE` | empty = built-in knowledge base; or a URL/path of a `knowledge.json` |
 | `CORS_ORIGINS` | `["http://localhost:3000"]` (browser origins allowed to call the API) |

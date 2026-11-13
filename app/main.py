@@ -42,7 +42,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
                 raise RuntimeError("ANTHROPIC_API_KEY is required when LLM_BACKEND=anthropic")
             sdk = anthropic.AsyncAnthropic(
                 api_key=settings.anthropic_api_key.get_secret_value(),
-                timeout=30.0,
+                timeout=settings.anthropic_timeout_seconds,
                 max_retries=0,
             )
             stack.push_async_callback(sdk.close)

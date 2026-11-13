@@ -293,8 +293,8 @@ so keep the other rows from git history or the table above.
 - **Exact-match `kind`.** A fallback with extra words is classified as an `answer` (section 2).
 - **Answers vary in wording** without temperature (section 5).
 - **No memory between questions.** Each question is answered alone.
-- **Timeouts over retries.** The Claude client has a 30 second timeout and no automatic retries
-  (`app/main.py`), so an API problem becomes a quick `503` or `error` event instead of a long
+- **Timeouts over retries.** The Claude client has a 30 second timeout (`ANTHROPIC_TIMEOUT_SECONDS`) and no
+  automatic retries (`app/main.py`), so an API problem becomes a quick `503` or `error` event instead of a long
   wait; the page shows its service-down state.
 
 ## 11. Python 3.12

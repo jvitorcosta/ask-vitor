@@ -209,3 +209,30 @@ async def test_stream_chat_yields_nothing_when_the_model_refuses() -> None:
         return httpx2.Response(200, text=body, headers={"content-type": "text/event-stream"})
 
     assert [t async for t in anthropic_client(handler).stream_chat(MESSAGES)] == []
+
+
+def test_timeout_comes_from_settings(monkeypatch: pytest.MonkeyPatch) -> None:
+    from fastapi.testclient import TestClient
+
+    from app.core.config import Settings
+    from app.main import create_app
+
+    app = create_app()
+    monkeypatch.setattr(
+        "app.main.get_settings",
+        lambda: Settings(
+            _env_file=None,
+            llm_backend="anthropic",
+            anthropic_api_key="test",
+            anthropic_timeout_seconds=12.5,
+        ),
+    )
+    with TestClient(app):
+        sdk = app.state.llm_client._client
+        assert sdk.timeout == 12.5
+
+
+def test_timeout_defaults_to_30_seconds() -> None:
+    from app.core.config import Settings
+
+    assert Settings(_env_file=None).anthropic_timeout_seconds == 30.0

@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     llm_backend: Literal["ollama", "anthropic"] = "ollama"
     anthropic_api_key: SecretStr | None = None
     anthropic_model: str = "claude-haiku-5-5"
+    anthropic_timeout_seconds: float = 30.0
     max_output_tokens: int = 300
     # URL or path of the site's knowledge.json; empty means the built-in knowledge base.
     knowledge_source: str = ""
